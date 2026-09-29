@@ -5,6 +5,7 @@ const url = require('url');
 const path = require('path');
 const fs = require('fs').promises;
 const dateTimeET = require('./src/dateTimeET');
+const getWisdom = require('./class3');
 const pageHead = '<!DOCTYPE html>\n<html lang="et">\n<head>\n\t<meta charset="utf-8">\n\t<title>Karina Varik, veevbiprogrammeerimine</title>\n</head>\n<body>\n';
 const pageBanner = '<img src="veebiprogrammeerimine_2026_ID.png" alt="Banner">\n';
 const pageBody = '\t<meta charset="utf-8">\n\t<h1>Karina Varik, veebiprogrammeerimine</h1>\n\t <p>See leht on loodud veebiprogrammeerimise kursusel <a href="https://www.tlu.ee">Tallinna Ülikoolis</a> ning ei sislda tõsiseltvõetavat sisu!</p>\n\t<p>Esialgu tutvusime lihtsalt HTML keelega, peatselt programmeerime.</p>\n\t<hr>';
@@ -22,6 +23,12 @@ http.createServer(async function(req, res){
 		res.write(pageHead);
 		res.write(pageBanner);
 		res.write(pageBody);
+
+		res.write('<ul>');
+		res.write('<li><a href="/vanasona">Tänane vanasõna</a></li>');
+		res.write('<li><a href="/miks">Miks?</a></li>');
+		res.write('</ul>');
+
 		res.write('<p>Nädalapäev: ' + dateTimeET.weekday() + '</p>');
 		res.write('<p>Täna on ' + dateTimeET.date() + '.<p>');
 		res.write('<p>Kellaaeg: ' + dateTimeET.time() + '<p/>');
@@ -30,13 +37,40 @@ http.createServer(async function(req, res){
 	}
 	
 	else if (currentURL.pathname === '/vanasona'){
+		let vanasona = await getWisdom('txt/vanasonad.txt');
 		res.writeHead(200, {"Content-type": "text/html"});
 		res.write(pageHead);
 		res.write('\t<h1>Tänane Eesti vanasõna</h1>\n\t<p>Siin näed tänaseks päevaks loositud vanasõna.</p>\n\t<hr>');
+		res.write('<p>' + vanasona + '</p>');
+		res.write('<p><a href="/">Tagasi avalehele</a></p>');
 		res.write(pageFoot);
 		return res.end();
 	}
 	
+	else if (currentURL.pathname === '/miks'){
+		res.writeHead(200, {"Content-type": "text/html; charset=utf-8"});
+		res.write(pageHead);
+		res.write('<h1>Miks ma tulin Tallinna Ülikooli õppima?</h1>');
+		res.write('<p>Soovin õppida programmeerimist ja arendada selles pidevalt.</p>');
+		res.write('<img src="/tlu_pilt.jpg" alt="Tallinna Ülikool" width="400">');
+		res.write('<p><a href="/">Tagasi avalehele</a></p>');
+		res.write(pageFoot);
+		return res.end();
+	}
+
+	else if (currentURL.pathname.endsWith('jpg')){
+		let imagePath = path.join(__dirname, 'pic', path.basename(currentURL.pathname));
+
+		try {
+			const data = await fs.readFile(imagePath);
+			res.writeHead(200, {"Content-type": "image/jpeg"});
+			return res.end(data);
+		} catch (err) {
+			res.writeHead(404, {"Content-type": "text/plain; charset=utf-8"});
+			return res.end('Pilti ei leitud!');
+		}
+	}
+
 	else if (currentURL.pathname === '/veebiprogrammeerimine_2026_ID.png'){
 		//liidame kättesaamatu päris kataliig jms virtuaalsesks failiteeks
 		let bannerPath = path.join(__dirname, 'pic', currentURL.pathname);
@@ -67,4 +101,4 @@ http.createServer(async function(req, res){
 	else {
 		return res.end('Viga 404! Ei leia sellist lehte!');
 	}
-}).listen(5299);
+}).listen(5298);
